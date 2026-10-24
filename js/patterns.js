@@ -19,10 +19,12 @@ export const PATTERNS = [
   { id: "SAM",   weight: 1, make: () => `SAM_${pad(rand(0, 9999), 4)}` },
   { id: "M2U",   weight: 1, make: () => `M2U${pad(rand(0, 99999), 5)}` },
 
-  // Con fecha en el nombre (Android, webcams de Windows, Pixel)
-  { id: "VID",   weight: 4, dated: true, make: (d) => `VID_${ymd(d)}` },
-  { id: "WIN",   weight: 1, dated: true, make: (d) => `WIN_${ymd(d)}` },
-  { id: "PXL",   weight: 1, dated: true, minYear: 2020, make: (d) => `PXL_${ymd(d)}` },
+  // Con fecha en el nombre (Android, webcams de Windows, Pixel).
+  // Pesan más porque en la prueba real dieron el doble de videos con ≤10 vistas.
+  // minYear: antes de esos años esos nombres casi no existían.
+  { id: "VID",   weight: 10, dated: true, minYear: 2010, make: (d) => `VID_${ymd(d)}` },
+  { id: "WIN",   weight: 2, dated: true, minYear: 2015, make: (d) => `WIN_${ymd(d)}` },
+  { id: "PXL",   weight: 2, dated: true, minYear: 2020, make: (d) => `PXL_${ymd(d)}` },
 
   // Títulos genéricos
   { id: "MyMovie",  weight: 1, make: () => `"My Movie ${rand(1, 30)}"` },
