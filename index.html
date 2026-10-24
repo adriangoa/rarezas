@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rarezas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="dot" aria-hidden="true"></span>
+      <h1>Rarezas</h1>
+    </div>
+    <p class="tagline">Videos que el algoritmo olvidó</p>
+    <button id="btn-favs" class="ghost">★ Guardados <span id="fav-count" class="badge">0</span></button>
+  </header>
+
+  <main class="layout">
+    <section class="stage">
+      <div class="screen">
+        <div id="player"></div>
+        <div id="screen-msg" class="screen-msg">Pulsa «Siguiente» para sintonizar…</div>
+      </div>
+
+      <div class="info">
+        <div class="info-main">
+          <h2 id="v-title">—</h2>
+          <p id="v-meta" class="meta"></p>
+          <p id="v-rarity" class="rarity"></p>
+        </div>
+        <a id="v-link" class="ghost small" target="_blank" rel="noopener" hidden>Abrir en YouTube ↗</a>
+      </div>
+
+      <div class="controls">
+        <button id="btn-prev" class="ghost" title="Anterior (←)">← Anterior</button>
+        <button id="btn-next" class="primary" title="Siguiente (→)">Siguiente →</button>
+        <button id="btn-fav" class="ghost" title="Guardar (F)">☆ Guardar</button>
+        <button id="btn-hide" class="ghost" title="No volver a mostrar este video">Ocultar</button>
+      </div>
+      <p id="status" class="status" role="status"></p>
+    </section>
+
+    <aside class="panel">
+      <h3>Sintonía</h3>
+      <label>Año
+        <select id="f-year"></select>
+      </label>
+      <label>Vistas máximas
+        <select id="f-views">
+          <option value="0">0 (nadie lo ha visto)</option>
+          <option value="10">10</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="1000">1,000</option>
+        </select>
+      </label>
+      <label>Duración
+        <select id="f-duration">
+          <option value="any">Cualquiera</option>
+          <option value="short">Corta (&lt; 4 min)</option>
+          <option value="medium">Media (4–20 min)</option>
+          <option value="long">Larga (&gt; 20 min)</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="f-strict"> Solo títulos tipo nombre de archivo</label>
+      <label class="check"><input type="checkbox" id="f-tv"> Modo TV (avanza solo al terminar)</label>
+
+      <div class="stats">
+        <div><span>Cuota usada hoy</span><strong id="s-quota">0</strong></div>
+        <div><span>En cola</span><strong id="s-pool">0</strong></div>
+        <div><span>Vistos</span><strong id="s-seen">0</strong></div>
+      </div>
+
+      <p class="hint">Atajos: <kbd>→</kbd> siguiente · <kbd>←</kbd> anterior · <kbd>F</kbd> guardar · <kbd>T</kbd> modo TV</p>
+      <button id="btn-key" class="ghost small">Cambiar API key</button>
+    </aside>
+  </main>
+
+  <dialog id="dlg-favs">
+    <div class="dlg-head">
+      <h3>Rarezas guardadas</h3>
+      <button id="btn-close-favs" class="ghost small">Cerrar</button>
+    </div>
+    <ul id="fav-list" class="fav-list"></ul>
+    <p id="fav-empty" class="hint">Todavía no guardas nada. Usa <kbd>F</kbd> cuando encuentres algo bueno.</p>
+  </dialog>
+
+  <dialog id="dlg-key">
+    <form method="dialog" id="key-form">
+      <h3>Tu API key de YouTube</h3>
+      <p class="hint">Se guarda solo en este navegador. Sácala gratis en Google Cloud Console activando «YouTube Data API v3». Los pasos están en el README.</p>
+      <input id="key-input" type="password" placeholder="AIza…" autocomplete="off" required>
+      <menu>
+        <button value="cancel" class="ghost" formnovalidate>Cancelar</button>
+        <button value="ok" class="primary">Guardar</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- Opcional: config.js (ignorado por git). Copia config.example.js → config.js -->
+  <script src="config.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
