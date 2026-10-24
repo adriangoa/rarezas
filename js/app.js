@@ -1,5 +1,5 @@
 import { pickPattern, randomWindow, yearRange, looksLikeFilename } from "./patterns.js";
-import { searchVideos, getDetails, formatDuration, loadPlayerApi } from "./youtube.js";
+import { searchVideos, getDetails, formatDuration, isShort, loadPlayerApi } from "./youtube.js";
 import { load, save, getQuota } from "./storage.js";
 
 // ---------- Estado ----------
@@ -13,7 +13,8 @@ const state = {
   seen: new Set(load("seen", [])),  // ids ya mostrados (persistente)
   hidden: new Set(load("hidden", [])),
   favs: load("favs", []),
-  filters: load("filters", { year: "any", views: "10", duration: "any", strict: false, tv: false }),
+  // Se mezcla con los valores por defecto para que filtros nuevos tengan valor en navegadores con filtros viejos guardados.
+  filters: { year: "any", views: "10", duration: "any", strict: false, noShorts: true, tv: false, ...load("filters", {}) },
   busy: false,
   player: null,
 };
@@ -31,6 +32,7 @@ function initFilters() {
   $("f-views").value = state.filters.views;
   $("f-duration").value = state.filters.duration;
   $("f-strict").checked = state.filters.strict;
+  $("f-noshorts").checked = state.filters.noShorts;
   $("f-tv").checked = state.filters.tv;
 
   const onChange = () => {
@@ -40,6 +42,7 @@ function initFilters() {
       views: $("f-views").value,
       duration: $("f-duration").value,
       strict: $("f-strict").checked,
+      noShorts: $("f-noshorts").checked,
       tv: $("f-tv").checked,
     };
     save("filters", state.filters);
@@ -47,7 +50,7 @@ function initFilters() {
     if (prev !== JSON.stringify({ ...state.filters, tv: null })) state.pool = [];
     renderStats();
   };
-  ["f-year", "f-views", "f-duration", "f-strict", "f-tv"].forEach((id) => $(id).addEventListener("change", onChange));
+  ["f-year", "f-views", "f-duration", "f-strict", "f-noshorts", "f-tv"].forEach((id) => $(id).addEventListener("change", onChange));
 }
 
 function renderStats() {
@@ -65,6 +68,7 @@ function passes(v) {
   if (state.seen.has(v.id) || state.hidden.has(v.id)) return false;
   if (v.views > Number(state.filters.views)) return false;
   if (state.filters.strict && !looksLikeFilename(v.title)) return false;
+  if (state.filters.noShorts && isShort(v)) return false;
   return true;
 }
 

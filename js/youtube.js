@@ -51,7 +51,8 @@ export async function getDetails(ids, key) {
   if (!ids.length) return [];
   const data = await call(
     "videos",
-    { part: "snippet,statistics,contentDetails,status", id: ids.join(","), maxResults: 50 },
+    // part=player con maxHeight trae embedWidth/embedHeight: así sabemos si es vertical.
+    { part: "snippet,statistics,contentDetails,status,player", id: ids.join(","), maxResults: 50, maxHeight: 360 },
     key,
     1
   );
@@ -65,14 +66,34 @@ export async function getDetails(ids, key) {
     duration: v.contentDetails?.duration,
     embeddable: v.status?.embeddable !== false,
     madeForKids: !!v.status?.madeForKids,
+    vertical: Number(v.player?.embedHeight) > Number(v.player?.embedWidth),
+    shortsTag: /#shorts?\b/i.test(`${v.snippet.title} ${v.snippet.description}`),
   }));
+}
+
+// La API no dice si algo es Short. Lo inferimos: etiqueta #shorts, o vertical de ≤3 min
+// subido desde que existen los Shorts. Los verticales de antes eran videos normales.
+const SHORTS_START = new Date("2020-09-14");
+export function isShort(v) {
+  if (v.shortsTag) return true;
+  return v.vertical && durationSeconds(v.duration) <= 180 && new Date(v.publishedAt) >= SHORTS_START;
+}
+
+function parseDuration(iso) {
+  const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(iso || "");
+  return m ? [m[1], m[2], m[3]].map((x) => Number(x || 0)) : null;
+}
+
+export function durationSeconds(iso) {
+  const p = parseDuration(iso);
+  return p ? p[0] * 3600 + p[1] * 60 + p[2] : 0;
 }
 
 // "PT1M23S" → "1:23"
 export function formatDuration(iso) {
-  const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(iso || "");
-  if (!m) return "";
-  const [h, mi, s] = [m[1], m[2], m[3]].map((x) => Number(x || 0));
+  const p = parseDuration(iso);
+  if (!p) return "";
+  const [h, mi, s] = p;
   const ss = String(s).padStart(2, "0");
   return h ? `${h}:${String(mi).padStart(2, "0")}:${ss}` : `${mi}:${ss}`;
 }
