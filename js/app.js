@@ -1,4 +1,4 @@
-import { pickPattern, randomWindow, looksLikeFilename } from "./patterns.js";
+import { pickPattern, randomWindow, yearRange, looksLikeFilename } from "./patterns.js";
 import { searchVideos, getDetails, formatDuration, loadPlayerApi } from "./youtube.js";
 import { load, save, getQuota } from "./storage.js";
 
@@ -73,9 +73,16 @@ async function refill() {
     const win = randomWindow(state.filters.year);
     const pattern = pickPattern(win.year);
     const q = pattern.make(win.day);
-    setStatus(`Sintonizando «${q}» · ${win.start.toLocaleDateString("es-MX", { month: "long", year: "numeric" })}…`);
+    // Probado con la API real: un número exacto (IMG_4821) dentro de un mes casi
+    // nunca da resultados, así que los patrones sin fecha buscan sin ventana
+    // (o en todo el año si hay filtro). Los de fecha sí usan el mes.
+    const range = pattern.dated ? win : state.filters.year === "any" ? {} : yearRange(win.year);
+    const when = pattern.dated
+      ? win.start.toLocaleDateString("es-MX", { month: "long", year: "numeric" })
+      : state.filters.year === "any" ? "cualquier año" : String(win.year);
+    setStatus(`Sintonizando «${q}» · ${when}…`);
 
-    const ids = await searchVideos({ q, start: win.start, end: win.end, duration: state.filters.duration }, state.key);
+    const ids = await searchVideos({ q, start: range.start, end: range.end, duration: state.filters.duration }, state.key);
     const fresh = ids.filter((id) => !state.seen.has(id) && !state.hidden.has(id));
     const details = await getDetails(fresh, state.key);
     const good = details.filter(passes).map((v) => ({ ...v, query: q }));
@@ -301,6 +308,7 @@ function init() {
 
   document.addEventListener("keydown", (e) => {
     if (e.target.matches("input, select, textarea") || document.querySelector("dialog[open]")) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return; // no robar Ctrl+F, Alt+←, etc.
     if (e.key === "ArrowRight") next();
     else if (e.key === "ArrowLeft") prev();
     else if (e.key.toLowerCase() === "f") toggleFav();

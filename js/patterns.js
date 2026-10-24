@@ -62,3 +62,11 @@ export function randomWindow(yearSetting) {
   const day = new Date(start.getTime() + Math.random() * (end - start));
   return { year, start, end, day };
 }
+
+// Año completo (hasta hoy si es el año actual).
+export function yearRange(year) {
+  const now = new Date();
+  const start = new Date(Date.UTC(year, 0, 1));
+  const end = new Date(Math.min(Date.UTC(year + 1, 0, 1), now.getTime()));
+  return { start, end };
+}

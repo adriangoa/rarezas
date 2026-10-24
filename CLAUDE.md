@@ -55,7 +55,11 @@ El dueño del proyecto habla español (México). Responde y escribe la interfaz,
 ## Estado
 
 - La sintaxis y los generadores de patrones se probaron con Node.
-- **Todavía no se ha probado contra la API real de YouTube.** Lo primero es probarlo con una key y ajustar lo que falle.
+- **Probado contra la API real (2026-10-24):**
+  - Patrones con fecha (`VID_20140315` + ventana de ese mes): 50 resultados, 21 con ≤10 vistas, 4 con 0. Funcionan muy bien.
+  - Patrones numerados (`IMG_4821`, `MVI_0815`) con ventana de un mes o de un año: **0 resultados**. Sin ventana: 50 resultados de muchos años, 11 con ≤10 vistas.
+  - Por eso los patrones sin fecha buscan sin `publishedAfter/Before` (o en todo el año si el usuario filtró uno). Ver `refill()` y `yearRange()`.
+  - Falta probar a fondo en el navegador (reproductor, modo TV, errores de cuota).
 
 ## Siguientes pasos ideados
 
