@@ -25,6 +25,9 @@ export const PATTERNS = [
   { id: "VID",   weight: 10, dated: true, minYear: 2010, make: (d) => `VID_${ymd(d)}` },
   { id: "WIN",   weight: 2, dated: true, minYear: 2015, make: (d) => `WIN_${ymd(d)}` },
   { id: "PXL",   weight: 2, dated: true, minYear: 2020, make: (d) => `PXL_${ymd(d)}` },
+  // Videos reenviados por WhatsApp. El contador del día casi siempre es bajo, y sin él
+  // (solo "VID-20160612-WA") la búsqueda casi no encuentra nada.
+  { id: "WA",    weight: 3, dated: true, minYear: 2013, make: (d) => `VID-${ymd(d)}-WA${pad(rand(0, 20), 4)}` },
 
   // Títulos genéricos
   { id: "MyMovie",  weight: 1, make: () => `"My Movie ${rand(1, 30)}"` },
