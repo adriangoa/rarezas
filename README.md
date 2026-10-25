@@ -44,6 +44,9 @@ rarezas/
 │   ├── youtube.js      # llamadas a la API
 │   └── storage.js      # localStorage y contador de cuota
 ├── config.example.js   # plantilla para tu API key
+├── scripts/cache.mjs   # junta videos para el caché
+├── data/cache.json     # caché de videos (se actualiza cada noche)
+├── .github/workflows/  # GitHub Actions del caché nocturno
 ├── CLAUDE.md           # contexto completo del proyecto para seguir con IA
 └── .vscode/            # recomienda Live Server
 ```
@@ -51,10 +54,16 @@ rarezas/
 ## Ideas para seguir
 
 - **Agregar patrones:** edita la lista `PATTERNS` en `js/patterns.js`. El `weight` controla qué tan seguido sale cada uno.
-- **Filtro de región / idioma:** `search.list` acepta `regionCode` y `relevanceLanguage`.
-- **Backend con caché:** un script (Node o Python) que corra cada noche, junte cientos de videos y los guarde en un JSON. Así la página no gasta cuota y puedes compartirla sin exponer tu key.
 - **Rarezas compartidas:** una lista pública de las mejores que vaya guardando la comunidad.
-- **Botón "teletransporte":** que muestre de qué fecha y patrón salió el video.
+
+## Caché nocturno
+
+`scripts/cache.mjs` hace búsquedas con los mismos patrones de la página y guarda los videos en `data/cache.json`. La página saca videos de ahí primero, sin gastar cuota ni necesitar key, y solo busca en vivo cuando el caché no tiene nada que pase tus filtros.
+
+- **A mano:** `node scripts/cache.mjs` (usa la key de `config.js`). `SEARCHES=5 node scripts/cache.mjs` para hacer solo 5 búsquedas.
+- **Cada noche:** `.github/workflows/cache.yml` lo corre en GitHub Actions a las 3 a.m. (hora de CDMX). Necesita tu key como secreto: en GitHub, **Settings → Secrets and variables → Actions → New repository secret**, nombre `YT_API_KEY`. Si tu key tiene restricción de sitios web, crea otra solo para esto (restringida a YouTube Data API v3, sin restricción de sitio), porque Actions no manda esa cabecera.
+
+Por defecto hace 60 búsquedas (~6,000 unidades) y deja el resto de la cuota del día para buscar en vivo.
 
 ## Respeto
 

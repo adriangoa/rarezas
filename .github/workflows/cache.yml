@@ -1,0 +1,37 @@
+# Cada noche junta videos nuevos y actualiza data/cache.json.
+# Necesita el secreto YT_API_KEY (Settings → Secrets and variables → Actions).
+name: Caché nocturno
+
+on:
+  schedule:
+    # 09:00 UTC = 3 a.m. en CDMX, después de que la cuota se reinicia (medianoche del Pacífico).
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+    inputs:
+      searches:
+        description: "Cuántas búsquedas hacer (≈101 unidades cada una)"
+        default: "60"
+
+permissions:
+  contents: write
+
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Juntar videos
+        run: node scripts/cache.mjs
+        env:
+          YT_API_KEY: ${{ secrets.YT_API_KEY }}
+          SEARCHES: ${{ inputs.searches || '60' }}
+      - name: Subir el caché
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/cache.json
+          git diff --cached --quiet || git commit -m "Caché nocturno $(date -u +%F)"
+          git push

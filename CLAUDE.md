@@ -41,11 +41,18 @@ El dueño del proyecto habla español (México). Responde y escribe la interfaz,
 | `js/youtube.js` | `searchVideos`, `getDetails`, `formatDuration`, carga del IFrame API. Suma cuota en cada llamada |
 | `js/storage.js` | `load`/`save` seguros sobre localStorage, contador de cuota diario |
 | `config.example.js` | Plantilla; copiar a `config.js` |
+| `scripts/cache.mjs` | Script de Node (sin dependencias) que junta videos con `buildSearch` y los guarda en `data/cache.json`. Reusa `patterns.js` y `youtube.js` |
+| `data/cache.json` | Caché de videos. Una línea por video. Lo actualiza el workflow cada noche |
+| `.github/workflows/cache.yml` | Corre `scripts/cache.mjs` a las 09:00 UTC y sube el caché. Usa el secreto `YT_API_KEY` |
 
 ## Funcionalidades actuales
 
 - Siguiente / anterior con historial de sesión
-- Filtros: año, vistas máximas (0, 10, 50, 100, 1000), duración, solo títulos tipo nombre de archivo
+- Filtros: año, vistas máximas (0, 10, 50, 100, 1000), duración, solo títulos tipo nombre de archivo, sin Shorts (por defecto)
+- **Caché:** la página saca videos de `data/cache.json` primero (sin cuota ni key) y solo busca en vivo si no queda nada y hay key
+- Teletransporte: muestra de qué búsqueda salió cada video
+- La cola sobrante se guarda entre sesiones (mismos filtros, menos de 7 días)
+- Patrón de WhatsApp (`VID-AAAAMMDD-WA0000`)
 - Modo TV (avanza solo al terminar el video)
 - Guardar favoritos (lista en un diálogo) y ocultar videos para siempre
 - No repite videos ya vistos (hasta 5,000 ids recordados)
@@ -63,11 +70,10 @@ El dueño del proyecto habla español (México). Responde y escribe la interfaz,
 
 ## Siguientes pasos ideados
 
-1. **Caché nocturno (prioridad):** un script (Node o Python, quizá con GitHub Actions) que junte cientos de videos al día y los guarde en un JSON. La página leería de ahí: no gasta cuota en vivo y se puede publicar sin exponer la key.
-2. Filtro de región / idioma (`regionCode`, `relevanceLanguage`).
-3. Mostrar de qué patrón y fecha salió cada video ("teletransporte").
-4. Lista pública de rarezas favoritas de la comunidad.
-5. Publicar (GitHub Pages funcionaría para la versión estática).
+1. **Publicar en GitHub Pages**, junto con una forma de pedir que se excluya un video (enlace + lista de ids excluidos que filtre el caché y la página). Se pospuso a propósito para hacerse junto con la publicación.
+2. Lista pública de rarezas favoritas de la comunidad (necesita backend).
+
+Descartado: **filtro de región / idioma.** Probado con la API: `relevanceLanguage=es&regionCode=MX` solo cambió la mitad de los resultados (sin volverlos mexicanos) y `ja/JP` dio 0. Los títulos tipo nombre de archivo no tienen idioma.
 
 ## Principios a respetar
 

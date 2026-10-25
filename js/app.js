@@ -1,5 +1,5 @@
-import { pickPattern, randomWindow, yearRange, looksLikeFilename } from "./patterns.js";
-import { searchVideos, getDetails, formatDuration, isShort, loadPlayerApi } from "./youtube.js";
+import { buildSearch, looksLikeFilename } from "./patterns.js";
+import { searchVideos, getDetails, formatDuration, durationSeconds, isShort, loadPlayerApi } from "./youtube.js";
 import { load, save, getQuota } from "./storage.js";
 
 // ---------- Estado ----------
@@ -15,6 +15,7 @@ const state = {
   favs: load("favs", []),
   // Se mezcla con los valores por defecto para que filtros nuevos tengan valor en navegadores con filtros viejos guardados.
   filters: { year: "any", views: "10", duration: "any", strict: false, noShorts: true, tv: false, ...load("filters", {}) },
+  cache: [],                        // videos de data/cache.json
   busy: false,
   player: null,
 };
@@ -84,30 +85,55 @@ function restorePool() {
 }
 
 // ---------- Búsqueda ----------
+// Mismos cortes que videoDuration de search.list.
+const DURATION_OK = {
+  any: () => true,
+  short: (s) => s < 240,
+  medium: (s) => s >= 240 && s <= 1200,
+  long: (s) => s > 1200,
+};
+
 function passes(v) {
   if (!v.embeddable || v.madeForKids) return false;
   if (state.seen.has(v.id) || state.hidden.has(v.id)) return false;
   if (v.views > Number(state.filters.views)) return false;
   if (state.filters.strict && !looksLikeFilename(v.title)) return false;
   if (state.filters.noShorts && isShort(v)) return false;
+  // Año y duración ya los filtra la búsqueda en vivo, pero el caché trae de todo.
+  if (state.filters.year !== "any" && v.publishedAt.slice(0, 4) !== state.filters.year) return false;
+  if (!DURATION_OK[state.filters.duration](durationSeconds(v.duration))) return false;
   return true;
 }
 
+// ---------- Caché ----------
+// data/cache.json lo genera scripts/cache.mjs cada noche (GitHub Actions).
+// Sacar videos de ahí no gasta cuota y no necesita API key.
+async function loadCache() {
+  try {
+    const res = await fetch("data/cache.json", { cache: "no-cache" });
+    if (!res.ok) return;
+    const data = await res.json();
+    state.cache = data.videos || [];
+  } catch {
+    /* sin caché: solo búsqueda en vivo */
+  }
+}
+
+function refillFromCache() {
+  const good = state.cache.filter(passes);
+  good.sort(() => Math.random() - 0.5);
+  state.pool.push(...good.slice(0, 50));
+  savePool();
+}
+
 async function refill() {
+  refillFromCache();
+  if (!state.key) return; // sin key, solo hay lo que tenga el caché
   for (let i = 0; i < MAX_SEARCHES_PER_CLICK && state.pool.length === 0; i++) {
-    const win = randomWindow(state.filters.year);
-    const pattern = pickPattern(win.year);
-    const q = pattern.make(win.day);
-    // Probado con la API real: un número exacto (IMG_4821) dentro de un mes casi
-    // nunca da resultados, así que los patrones sin fecha buscan sin ventana
-    // (o en todo el año si hay filtro). Los de fecha sí usan el mes.
-    const range = pattern.dated ? win : state.filters.year === "any" ? {} : yearRange(win.year);
-    const when = pattern.dated
-      ? win.start.toLocaleDateString("es-MX", { month: "long", year: "numeric" })
-      : state.filters.year === "any" ? "cualquier año" : String(win.year);
+    const { q, start, end, when } = buildSearch(state.filters.year);
     setStatus(`Sintonizando «${q}» · ${when}…`);
 
-    const ids = await searchVideos({ q, start: range.start, end: range.end, duration: state.filters.duration }, state.key);
+    const ids = await searchVideos({ q, start, end, duration: state.filters.duration }, state.key);
     const fresh = ids.filter((id) => !state.seen.has(id) && !state.hidden.has(id));
     const details = await getDetails(fresh, state.key);
     const good = details.filter(passes).map((v) => ({ ...v, query: q, when }));
@@ -123,7 +149,7 @@ async function refill() {
 // ---------- Reproducción ----------
 async function next() {
   if (state.busy) return;
-  if (!state.key) return askKey();
+  if (!state.key && !state.cache.length) return askKey();
 
   // Si retrocedimos, primero avanzamos por el historial.
   if (state.pos < state.history.length - 1) {
@@ -138,7 +164,11 @@ async function next() {
     const v = state.pool.shift();
     savePool();
     if (!v) {
-      setStatus("Nada pasó los filtros en esta vuelta. Prueba subir las vistas máximas o quitar «solo nombres de archivo».");
+      setStatus(
+        state.key
+          ? "Nada pasó los filtros en esta vuelta. Prueba subir las vistas máximas o quitar «solo nombres de archivo»."
+          : "El caché no tiene más videos con estos filtros. Prueba otros filtros o agrega tu API key para buscar en vivo."
+      );
       return;
     }
     state.history.push(v);
@@ -333,7 +363,7 @@ function handleApiError(err) {
 }
 
 // ---------- Arranque ----------
-function init() {
+async function init() {
   initFilters();
   initKeyDialog();
   restorePool();
@@ -363,7 +393,8 @@ function init() {
   if (location.protocol === "file:") {
     setStatus("Ábrelo con un servidor local (Live Server en VS Code); YouTube no reproduce desde file://.");
   }
-  if (!state.key) askKey();
+  await loadCache();
+  if (!state.key && !state.cache.length) askKey();
 }
 
 init();

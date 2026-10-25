@@ -68,6 +68,22 @@ export function randomWindow(yearSetting) {
   return { year, start, end, day };
 }
 
+// Arma una búsqueda completa: texto, rango de fechas y una etiqueta legible.
+// La usan la página (búsqueda en vivo) y scripts/cache.mjs.
+// Probado con la API real: un número exacto (IMG_4821) dentro de un mes casi
+// nunca da resultados, así que los patrones sin fecha buscan sin ventana
+// (o en todo el año si hay filtro). Los de fecha sí usan el mes.
+export function buildSearch(yearSetting) {
+  const win = randomWindow(yearSetting);
+  const pattern = pickPattern(win.year);
+  const q = pattern.make(win.day);
+  const range = pattern.dated ? win : yearSetting === "any" ? {} : yearRange(win.year);
+  const when = pattern.dated
+    ? win.start.toLocaleDateString("es-MX", { month: "long", year: "numeric", timeZone: "UTC" })
+    : yearSetting === "any" ? "cualquier año" : String(win.year);
+  return { q, start: range.start, end: range.end, when };
+}
+
 // Año completo (hasta hoy si es el año actual).
 export function yearRange(year) {
   const now = new Date();
