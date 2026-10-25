@@ -220,10 +220,17 @@ function hideCurrent() {
   save("hidden", [...state.hidden]);
   state.favs = state.favs.filter((f) => f.id !== v.id);
   save("favs", state.favs);
-  // Lo sacamos del historial para que «anterior» no lo regrese.
-  state.history.splice(state.pos, 1);
-  state.pos = state.history.length - 1;
-  next();
+  // Lo sacamos del historial (todas sus copias) para que «anterior» no lo regrese.
+  const before = state.history.slice(0, state.pos).filter((x) => x.id !== v.id).length;
+  state.history = state.history.filter((x) => x.id !== v.id);
+  // Si estábamos a mitad del historial, seguimos con el que venía después.
+  if (before < state.history.length) {
+    state.pos = before;
+    show(state.history[before]);
+  } else {
+    state.pos = state.history.length - 1;
+    next();
+  }
 }
 
 function openFavs() {
