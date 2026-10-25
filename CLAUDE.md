@@ -17,7 +17,7 @@ El dueño del proyecto habla español (México). Responde y escribe la interfaz,
   - La key se lee de `window.RAREZAS_CONFIG.apiKey` (archivo `config.js`, ignorado por git) o de `localStorage`. Nunca debe subirse al repo.
 - **YouTube IFrame Player API** para reproducir. Solo se usa el reproductor oficial; no se descargan ni se rehospedan videos (términos de YouTube y respeto a los autores).
 - Se sirve con **Live Server** de VS Code. Desde `file://` YouTube no reproduce videos incrustados.
-- Estado persistente en `localStorage` con prefijo `rarezas:` (key, filtros, vistos, ocultos, guardados, cuota).
+- Estado persistente en `localStorage` con prefijo `rarezas:` (key, filtros, vistos, ocultos, guardados, cuota, cola sobrante).
 
 ## Cómo funciona la búsqueda
 

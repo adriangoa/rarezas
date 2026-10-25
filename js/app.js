@@ -36,7 +36,7 @@ function initFilters() {
   $("f-tv").checked = state.filters.tv;
 
   const onChange = () => {
-    const prev = JSON.stringify({ ...state.filters, tv: null });
+    const prev = searchSignature();
     state.filters = {
       year: yearSel.value,
       views: $("f-views").value,
@@ -47,7 +47,10 @@ function initFilters() {
     };
     save("filters", state.filters);
     // Si cambió algo que afecta la búsqueda, la cola ya no sirve.
-    if (prev !== JSON.stringify({ ...state.filters, tv: null })) state.pool = [];
+    if (prev !== searchSignature()) {
+      state.pool = [];
+      savePool();
+    }
     renderStats();
   };
   ["f-year", "f-views", "f-duration", "f-strict", "f-noshorts", "f-tv"].forEach((id) => $(id).addEventListener("change", onChange));
@@ -61,6 +64,24 @@ function renderStats() {
 }
 
 const setStatus = (msg) => ($("status").textContent = msg || "");
+
+// ---------- Cola persistente ----------
+// La cola sobrante se guarda para no tirar búsquedas (y cuota) al cerrar la página.
+// Solo se reusa con los mismos filtros de búsqueda y si no es muy vieja (las vistas cambian).
+const POOL_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+
+// Filtros que afectan qué videos entran a la cola (el modo TV no).
+const searchSignature = () => JSON.stringify({ ...state.filters, tv: null });
+
+function savePool() {
+  save("pool", { signature: searchSignature(), savedAt: Date.now(), items: state.pool });
+}
+
+function restorePool() {
+  const saved = load("pool", null);
+  if (!saved || saved.signature !== searchSignature() || Date.now() - saved.savedAt > POOL_MAX_AGE) return;
+  state.pool = (saved.items || []).filter((v) => !state.seen.has(v.id) && !state.hidden.has(v.id));
+}
 
 // ---------- Búsqueda ----------
 function passes(v) {
@@ -94,6 +115,7 @@ async function refill() {
     // Barajar para no ver siempre el primero que dio YouTube.
     good.sort(() => Math.random() - 0.5);
     state.pool.push(...good);
+    savePool();
     renderStats();
   }
 }
@@ -114,6 +136,7 @@ async function next() {
   try {
     if (state.pool.length === 0) await refill();
     const v = state.pool.shift();
+    savePool();
     if (!v) {
       setStatus("Nada pasó los filtros en esta vuelta. Prueba subir las vistas máximas o quitar «solo nombres de archivo».");
       return;
@@ -313,6 +336,7 @@ function handleApiError(err) {
 function init() {
   initFilters();
   initKeyDialog();
+  restorePool();
   renderStats();
 
   $("btn-next").onclick = next;
