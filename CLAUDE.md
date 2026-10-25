@@ -67,6 +67,11 @@ El dueño del proyecto habla español (México). Responde y escribe la interfaz,
   - Patrones numerados (`IMG_4821`, `MVI_0815`) con ventana de un mes o de un año: **0 resultados**. Sin ventana: 50 resultados de muchos años, 11 con ≤10 vistas.
   - Por eso los patrones sin fecha buscan sin `publishedAfter/Before` (o en todo el año si el usuario filtró uno). Ver `refill()` y `yearRange()`.
   - Falta probar a fondo en el navegador (reproductor, modo TV, errores de cuota).
+- **Pendiente al cerrar la sesión del 2026-10-24:**
+  - El caché nocturno (último commit) no se ha probado en el navegador.
+  - Falta crear el secreto `YT_API_KEY` en GitHub (Settings → Secrets and variables → Actions) para que corra el workflow. Se ofreció hacerlo con `gh secret set` usando la key de `config.js`; el dueño no ha decidido. Si su key tiene restricción de sitio web, necesita otra key para Actions.
+  - Después: lanzar una corrida manual del workflow y revisar que suba el caché.
+  - Siguiente mejora: publicar en GitHub Pages + forma de pedir exclusión de videos.
 
 ## Siguientes pasos ideados
 
