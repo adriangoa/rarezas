@@ -78,6 +78,8 @@ body {
 .info h2 { margin: 0 0 4px; font-family: var(--mono); font-size: 1.15rem; word-break: break-word; }
 .meta { margin: 0; color: var(--muted); font-size: 0.9rem; }
 .rarity { margin: 6px 0 0; color: var(--accent); font-size: 0.9rem; }
+.origin { margin: 6px 0 0; color: var(--muted); font-family: var(--mono); font-size: 0.8rem; }
+.origin code { color: var(--text); }
 
 .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 .status { min-height: 1.2em; color: var(--muted); font-family: var(--mono); font-size: 0.85rem; }

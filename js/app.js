@@ -89,7 +89,7 @@ async function refill() {
     const ids = await searchVideos({ q, start: range.start, end: range.end, duration: state.filters.duration }, state.key);
     const fresh = ids.filter((id) => !state.seen.has(id) && !state.hidden.has(id));
     const details = await getDetails(fresh, state.key);
-    const good = details.filter(passes).map((v) => ({ ...v, query: q }));
+    const good = details.filter(passes).map((v) => ({ ...v, query: q, when }));
 
     // Barajar para no ver siempre el primero que dio YouTube.
     good.sort(() => Math.random() - 0.5);
@@ -152,6 +152,12 @@ async function show(v) {
   $("v-meta").textContent = `${v.channel} · ${date} · ${formatDuration(v.duration)}`;
   $("v-rarity").textContent =
     v.views === 0 ? "Nadie lo había visto antes que tú." : `${v.views.toLocaleString("es-MX")} ${v.views === 1 ? "vista" : "vistas"} en total`;
+  // «Teletransporte»: de qué búsqueda salió. Los guardados antes de esta función no lo traen.
+  const origin = $("v-origin");
+  origin.hidden = !v.query;
+  if (v.query) {
+    origin.replaceChildren("Sintonizado con ", Object.assign(document.createElement("code"), { textContent: v.query }), ` · ${v.when}`);
+  }
   const link = $("v-link");
   link.href = `https://www.youtube.com/watch?v=${v.id}`;
   link.hidden = false;
@@ -193,7 +199,7 @@ function toggleFav() {
   if (isFav(v.id)) {
     state.favs = state.favs.filter((f) => f.id !== v.id);
   } else {
-    state.favs.unshift({ id: v.id, title: v.title, channel: v.channel, thumb: v.thumb, views: v.views, publishedAt: v.publishedAt, savedAt: Date.now() });
+    state.favs.unshift({ id: v.id, title: v.title, channel: v.channel, thumb: v.thumb, views: v.views, publishedAt: v.publishedAt, query: v.query, when: v.when, savedAt: Date.now() });
   }
   save("favs", state.favs);
   renderFavButton();
@@ -245,7 +251,7 @@ function openFavs() {
     play.textContent = "Ver";
     play.onclick = () => {
       $("dlg-favs").close();
-      state.history.push({ ...f, duration: "", query: "" });
+      state.history.push({ ...f, duration: "" });
       state.pos = state.history.length - 1;
       show(state.history[state.pos]);
     };
